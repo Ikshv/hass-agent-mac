@@ -64,20 +64,33 @@ class HASSMacSensorCoordinator(DataUpdateCoordinator):
             sw_version="1.0.0",
         )
         
+        _LOGGER.info(f"Device '{DEVICE_NAME}' created/found with ID: {device.id}")
+        
         # Associate all sensor.* entities with this device
         sensor_ids = [
             "cpu_usage", "memory_usage", "disk_usage", "battery_level",
             "is_charging", "is_active", "uptime", "network_sent", "network_received"
         ]
         
+        associated_count = 0
         for sensor_id in sensor_ids:
             entity_id = f"sensor.{sensor_id}"
             entity = entity_registry.async_get(entity_id)
-            if entity and entity.device_id != device.id:
-                entity_registry.async_update_entity(
-                    entity_id,
-                    device_id=device.id,
-                )
+            if entity:
+                if entity.device_id != device.id:
+                    entity_registry.async_update_entity(
+                        entity_id,
+                        device_id=device.id,
+                    )
+                    _LOGGER.info(f"Associated {entity_id} with device {device.id}")
+                    associated_count += 1
+            else:
+                _LOGGER.debug(f"Entity {entity_id} not found yet (Mac app may not have created it)")
+        
+        if associated_count > 0:
+            _LOGGER.info(f"Associated {associated_count} sensors with device '{DEVICE_NAME}'")
+        else:
+            _LOGGER.info(f"No sensors found to associate. Make sure the Mac app is running and sending sensor data.")
 
     async def _async_update_data(self) -> dict:
         """Fetch data from the HASS Mac Sensor API."""
