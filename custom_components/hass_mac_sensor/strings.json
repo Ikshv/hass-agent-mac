@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HASS Mac Sensor",
+        "description": "This integration groups sensors from the HASS Mac Sensor Agent app under a single device named 'hass-ma'.",
+        "data": {
+          "host": "Home Assistant URL (optional)",
+          "token": "Access Token (optional)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect",
+      "invalid_auth": "Invalid authentication",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  }
+}

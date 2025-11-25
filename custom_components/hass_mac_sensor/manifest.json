@@ -1,0 +1,12 @@
+{
+  "domain": "hass_mac_sensor",
+  "name": "HASS Mac Sensor",
+  "codeowners": ["@hass-mac-sensor"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/Ikshv/hass-agent-mac",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "requirements": [],
+  "version": "1.0.0"
+}
