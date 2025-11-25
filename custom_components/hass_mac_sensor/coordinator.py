@@ -68,8 +68,15 @@ class HASSMacSensorCoordinator(DataUpdateCoordinator):
         
         # Dynamically discover all sensors from the Mac app
         # Look for all sensor.* states that have the "source" attribute set to "hass_mac_sensor_agent"
+        # Also check for known sensor IDs that match the Mac app's sensor list
         associated_count = 0
         discovered_sensors = []
+        
+        # Known sensor IDs from the Mac app (fallback for sensors created before source attribute was added)
+        known_sensor_ids = [
+            "cpu_usage", "memory_usage", "disk_usage", "battery_level",
+            "is_charging", "is_active", "uptime", "network_sent", "network_received"
+        ]
         
         # Get all states that start with "sensor."
         all_states = self.hass.states.async_all()
@@ -82,7 +89,17 @@ class HASSMacSensorCoordinator(DataUpdateCoordinator):
             source = attributes.get("source")
             unique_id = attributes.get("unique_id")
             
-            if source == "hass_mac_sensor_agent" or (unique_id and unique_id.startswith("hass_mac_sensor_agent_")):
+            # Extract sensor ID from entity_id (e.g., "sensor.cpu_usage" -> "cpu_usage")
+            sensor_id = state.entity_id.replace("sensor.", "")
+            
+            # Check if this sensor is from our Mac app
+            is_mac_sensor = (
+                source == "hass_mac_sensor_agent" or 
+                (unique_id and unique_id.startswith("hass_mac_sensor_agent_")) or
+                sensor_id in known_sensor_ids  # Fallback for existing sensors
+            )
+            
+            if is_mac_sensor:
                 discovered_sensors.append(state.entity_id)
                 
                 # Get or create entity registry entry
@@ -101,14 +118,14 @@ class HASSMacSensorCoordinator(DataUpdateCoordinator):
                 else:
                     # Entity doesn't exist in registry, create it
                     try:
-                        # Extract sensor ID from unique_id or entity_id
-                        sensor_id = unique_id.replace("hass_mac_sensor_agent_", "") if unique_id else state.entity_id.replace("sensor.", "")
+                        # Extract sensor ID from unique_id or use the one we already extracted
+                        registry_sensor_id = unique_id.replace("hass_mac_sensor_agent_", "") if unique_id else sensor_id
                         
                         entity_registry.async_get_or_create(
                             "sensor",
                             DOMAIN,
-                            unique_id if unique_id else f"{DOMAIN}_{sensor_id}",
-                            suggested_object_id=sensor_id,
+                            unique_id if unique_id else f"{DOMAIN}_{registry_sensor_id}",
+                            suggested_object_id=registry_sensor_id,
                             device_id=device.id,
                         )
                         _LOGGER.info(f"Created entity registry entry for {state.entity_id} and associated with device")
